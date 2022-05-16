@@ -1,0 +1,178 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial esp8266(10, 11);
+
+void setup()
+{
+  Serial.begin(9600);
+  esp8266.begin(9600);
+
+  Serial.flush();
+
+  esp8266.print("AT+RST\r\n"); // reset for esp8266
+  delay(500);
+  esp8266.flush();//clear serial1
+  // Check AT
+  esp8266.print("AT"); // reset for esp8266
+  esp8266.print("AT+CIFSR\r\n");// learn the ip which token for esp8266
+  delay(500);
+  if (esp8266.find("ready"))
+  {
+    esp8266.flush();
+    esp8266.print("AT+CIFSR\r\n");
+    delay(500);
+    Serial.println("CIHAZ IP ADRESI:" + esp8266.readString()); // print esp8266 ip
+
+  }
+  else
+  {
+    Serial.println("there is no internet connection");
+  }
+  esp8266.print("AT+CIPMUX=1\r\n");//ser mux 1 so we want to connect as multiple users
+  delay(500);
+  if (esp8266.find("OK"))
+  {
+    Serial.println("Mux ok");
+  }
+  else
+  {
+    Serial.println("MUX failed");
+  }
+  esp8266.print("AT+CIPSERVER=1,23\r\n");// set esp8266 as server
+  delay(500);
+  if (esp8266.find("OK"))
+  {
+    Serial.println("SERVER started");
+  }
+  else
+  {
+    Serial.println("SERVER failed");
+  }
+
+}
+void loop()
+{
+
+  if (esp8266.available())
+  {
+    Serial.print(esp8266.readString()); // get message which comes from clients.
+  }
+}
+
+void setup() {
+    Serial.begin(9600); 
+}
+ 
+void loop(){
+int bar=analogRead(A0);
+Serial.print("Analog Reading in Bar:");
+Serial.print(bar);
+delay(100);
+
+float voltage = (bar*8.0)/1024.0;
+  // (Volt,read - 0.5)/(4.5-0.5) = (Pressure - 0)/(1.2x1000000 - 0) which gives P =3(V - 0.5)*100000
+
+    
+    int cm_H20= bar * 1019.72;
+    int L_min= bar * 119.24;
+    
+   
+  float pressure_cm_H20 =(bar*1019.72);
+  float pressure_L_min =(bar*119.24);
+    Serial.print("Nasal pressure = ");
+    Serial.println(pressure_cm_H20);
+    Serial.print("Breathing flow signal = ");
+    Serial.println(pressure_L_min);
+    
+    delay(60000);
+}
+
+#include <ESP8266WiFi.h>
+#include <FirebaseArduino.h> 
+// Set these to run example. 
+#define FIREBASE_HOST "ventilator-app-9ffd3-default-rtdb.firebaseio.com" 
+#define FIREBASE_AUTH "lMcwtBDjmPsMcyOjfGktwsEmMP8IGB7sDzf3w9VG" 
+#define WIFI_SSID "EvidenteDeco" 
+#define WIFI_PASSWORD "1234567890Evidente_" 
+ 
+void setup() { 
+  Serial.begin(9600); 
+ 
+  // connect to wifi. 
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD); 
+  Serial.print("connecting"); 
+  while (WiFi.status() != WL_CONNECTED) { 
+    Serial.print("."); 
+    delay(500); 
+  } 
+  Serial.println(); 
+  Serial.print("connected: "); 
+  Serial.println(WiFi.localIP()); 
+   
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH); 
+} 
+ 
+int n = 0; 
+ 
+void loop() { 
+  // set value 
+  Firebase.setFloat("number", 42.0); 
+  // handle error 
+  if (Firebase.failed()) { 
+      Serial.print("setting /number failed:"); 
+      Serial.println(Firebase.error());   
+      return; 
+  } 
+  delay(1000); 
+   
+  // update value 
+  Firebase.setFloat("number", 43.0); 
+  // handle error 
+  if (Firebase.failed()) { 
+      Serial.print("setting /number failed:"); 
+      Serial.println(Firebase.error());   
+      return; 
+  } 
+  delay(1000); 
+ 
+  // get value  
+  Serial.print("number: "); 
+  Serial.println(Firebase.getFloat("number")); 
+  delay(1000); 
+ 
+  // remove value 
+  Firebase.remove("number"); 
+  delay(1000); 
+ 
+  // set string value 
+  Firebase.setString("message", "hello world"); 
+  // handle error 
+  if (Firebase.failed()) { 
+      Serial.print("setting /message failed:"); 
+      Serial.println(Firebase.error());   
+      return; 
+  } 
+  delay(1000); 
+   
+  // set bool value 
+  Firebase.setBool("truth", false); 
+  // handle error 
+  if (Firebase.failed()) { 
+      Serial.print("setting /truth failed:"); 
+      Serial.println(Firebase.error());   
+      return; 
+  } 
+  delay(1000); 
+ 
+  // append a new value to /logs 
+  String name = Firebase.pushInt("logs", n++); 
+  // handle error 
+  if (Firebase.failed()) { 
+      Serial.print("pushing /logs failed:"); 
+      Serial.println(Firebase.error());   
+      return; 
+  } 
+  Serial.print("pushed: /logs/"); 
+  Serial.println(name); 
+  delay(1000); 
+}
